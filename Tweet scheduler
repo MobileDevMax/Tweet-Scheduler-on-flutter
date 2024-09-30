@@ -1,0 +1,157 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(TweetSchedulerApp());
+}
+
+class TweetSchedulerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Tweet Scheduler',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: TweetSchedulerHome(),
+    );
+  }
+}
+
+class TweetSchedulerHome extends StatefulWidget {
+  @override
+  _TweetSchedulerHomeState createState() => _TweetSchedulerHomeState();
+}
+
+class _TweetSchedulerHomeState extends State<TweetSchedulerHome> {
+  final TextEditingController _tweetController = TextEditingController();
+  DateTime? _scheduledTime;
+
+  void _scheduleTweet() {
+    if (_tweetController.text.isEmpty || _scheduledTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Enter your tweet text and select a time')),
+      );
+      return;
+    }
+
+    // Here you can add functionality to send a tweet
+    print('Tweet scheduled: "${_tweetController.text}" on $_scheduledTime');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Tweet scheduled!')),
+    );
+
+    // Reset state
+    _tweetController.clear();
+    setState(() {
+      _scheduledTime = null;
+    });
+  }
+
+  void _selectDateTime(BuildContext context) async {
+    DateTime now = DateTime.now();
+    DateTime? newDateTime = await showDateTimePicker(context, now);
+    if (newDateTime != null) {
+      setState(() {
+        _scheduledTime = newDateTime;
+      });
+    }
+  }
+
+  Future<DateTime?> showDateTimePicker(
+      BuildContext context, DateTime initialDate) {
+    return showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        DateTime selectedDate = initialDate;
+
+        return AlertDialog(
+          title: Text('Select time'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null) {
+                      selectedDate = date;
+                    }
+                  },
+                  child: Text('Select date'),
+                ),
+                SizedBox(height: 16), 
+                ElevatedButton(
+                  onPressed: () async {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(selectedDate),
+                    );
+                    if (time != null) {
+                      selectedDate = DateTime(
+                        selectedDate.year,
+                        selectedDate.month,
+                        selectedDate.day,
+                        time.hour,
+                        time.minute,
+                      );
+                    }
+                  },
+                  child: Text('Select time'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(selectedDate);
+              },
+              child: Text('Ready'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Tweet Scheduler'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _tweetController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Enter your tweet text',
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _selectDateTime(context),
+              child: Text('Select time'),
+            ),
+            SizedBox(height: 16),
+            if (_scheduledTime != null)
+              Text('Scheduled for: $_scheduledTime'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _scheduleTweet,
+              child: Text('Schedule a tweet'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
